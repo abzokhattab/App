@@ -51,21 +51,25 @@ const defaultProps = {
  * Returns all the participants in the active report
  *
  * @param {Object} report The active report object
+ * @param {object} policyMembers report policy members
  * @param {Object} personalDetails The personal details of the users
  * @param {Object} translate The localize
  * @return {Array}
  */
-const getAllParticipants = (report, personalDetails, translate) =>
+const getAllParticipants = (report, policyMembers, personalDetails, translate) =>
     _.chain(ReportUtils.getVisibleMemberIDs(report))
         .map((accountID, index) => {
             const userPersonalDetail = lodashGet(personalDetails, accountID, {displayName: personalDetails.displayName || translate('common.hidden'), avatar: ''});
             const userLogin = LocalePhoneNumber.formatPhoneNumber(userPersonalDetail.login || '') || translate('common.hidden');
             const displayName = PersonalDetailsUtils.getDisplayNameOrDefault(userPersonalDetail);
-
+            const userPersonalAccountID = userPersonalDetail.accountID;
+            const pendingAction = lodashGet(policyMembers, userPersonalAccountID, {}).pendingAction;
             return {
                 alternateText: userLogin,
                 displayName,
-                accountID: userPersonalDetail.accountID,
+                accountID: userPersonalAccountID,
+                isDisabled: ReportUtils.isOptimisticPersonalDetail(userPersonalAccountID),
+                pendingAction,
                 icons: [
                     {
                         id: accountID,
@@ -86,10 +90,7 @@ const getAllParticipants = (report, personalDetails, translate) =>
 
 function ReportParticipantsPage(props) {
     const styles = useThemeStyles();
-    const participants = _.map(getAllParticipants(props.report, props.personalDetails, props.translate), (participant) => ({
-        ...participant,
-        isDisabled: ReportUtils.isOptimisticPersonalDetail(participant.accountID),
-    }));
+    const participants = getAllParticipants(props.report, props.policyMembers, props.personalDetails, props.translate);
 
     return (
         <ScreenWrapper
@@ -147,6 +148,9 @@ export default compose(
     withLocalize,
     withReportOrNotFound(),
     withOnyx({
+        policyMembers: {
+            key: (props) => `${ONYXKEYS.COLLECTION.POLICY_MEMBERS}${props.report.policyID || '0'}`,
+        },
         personalDetails: {
             key: ONYXKEYS.PERSONAL_DETAILS_LIST,
         },
