@@ -1,6 +1,6 @@
 import lodashIsEqual from 'lodash/isEqual';
 import type {ForwardedRef, MutableRefObject, ReactNode} from 'react';
-import React, {createRef, forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState} from 'react';
+import React, {createRef, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import * as ValidationUtils from '@libs/ValidationUtils';
@@ -79,6 +79,7 @@ function FormProvider(
         enabledWhenOffline = false,
         draftValues,
         onSubmit,
+        shouldValidateAllFieldsOnChange = false,
         ...rest
     }: FormProviderProps,
     forwardedRef: ForwardedRef<FormRef>,
@@ -139,6 +140,11 @@ function FormProvider(
                 throw new Error('Validate callback must return an empty object or an object with shape {inputID: error}');
             }
 
+            if (shouldValidateAllFieldsOnChange) {
+                setErrors(validateErrors);
+                return validateErrors;
+            }
+
             const touchedInputErrors = Object.fromEntries(Object.entries(validateErrors).filter(([inputID]) => touchedInputs.current[inputID]));
 
             if (!lodashIsEqual(errors, touchedInputErrors)) {
@@ -147,8 +153,15 @@ function FormProvider(
 
             return touchedInputErrors;
         },
-        [errors, formID, validate],
+        [errors, formID, shouldValidateAllFieldsOnChange, validate],
     );
+
+    useEffect(() => {
+        if (!shouldValidateAllFieldsOnChange) {
+            return;
+        }
+        onValidate(inputValues);
+    }, [inputValues, onValidate, shouldValidateAllFieldsOnChange]);
 
     /** @param inputID - The inputID of the input being touched */
     const setTouchedInput = useCallback(

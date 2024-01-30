@@ -29,6 +29,7 @@ function BankAccountManualStep(props) {
     const {translate} = useLocalize();
     const {reimbursementAccount, reimbursementAccountDraft} = props;
 
+    const [shouldValidateAllFields, setShouldValidateAllFields] = React.useState(props.getDefaultStateForField('acceptTerms', false));
     const shouldDisableInputs = Boolean(lodashGet(reimbursementAccount, 'achData.bankAccountID'));
 
     /**
@@ -89,6 +90,7 @@ function BankAccountManualStep(props) {
             <FormProvider
                 formID={ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM}
                 onSubmit={submit}
+                shouldValidateAllFieldsOnChange={shouldValidateAllFields}
                 validate={validate}
                 submitButtonText={translate('common.continue')}
                 style={[styles.mh5, styles.mt3, styles.flexGrow1]}
@@ -133,6 +135,7 @@ function BankAccountManualStep(props) {
                             <TextLink href={CONST.TERMS_URL}>{translate('common.expensifyTermsOfService')}</TextLink>
                         </Text>
                     )}
+                    onValueChange={(value) => setShouldValidateAllFields(value)}
                     defaultValue={props.getDefaultStateForField('acceptTerms', false)}
                     shouldSaveDraft
                 />
