@@ -1,40 +1,32 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import AmountForm from '@components/AmountForm';
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapperWithRef from '@components/Form/InputWrapper';
 import type {FormOnyxValues} from '@components/Form/types';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import compose from '@libs/compose';
 import Navigation from '@libs/Navigation/Navigation';
 import {validateRateValue} from '@libs/PolicyDistanceRatesUtils';
-import withPolicy from '@pages/workspace/withPolicy';
 import type {WithPolicyProps} from '@pages/workspace/withPolicy';
+import withPolicy from '@pages/workspace/withPolicy';
 import WorkspacePageWithSections from '@pages/workspace/WorkspacePageWithSections';
 import * as Policy from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import INPUT_IDS from '@src/types/form/WorkspaceRateAndUnitForm';
-import type {WorkspaceRateAndUnit} from '@src/types/onyx';
 
-type WorkspaceRatePageBaseProps = WithPolicyProps;
-
-type WorkspaceRateAndUnitOnyxProps = {
-    workspaceRateAndUnit: OnyxEntry<WorkspaceRateAndUnit>;
-};
-
-type WorkspaceRatePageProps = WorkspaceRatePageBaseProps & WorkspaceRateAndUnitOnyxProps;
+type WorkspaceRatePageProps = WithPolicyProps;
 
 function WorkspaceRatePage(props: WorkspaceRatePageProps) {
+    const [workspaceRateAndUnit] = useOnyx(ONYXKEYS.WORKSPACE_RATE_AND_UNIT);
     const styles = useThemeStyles();
     const {translate, toLocaleDigit} = useLocalize();
     const outputCurrency = props.policy?.outputCurrency ?? CONST.CURRENCY.USD;
 
     useEffect(() => {
-        if (props.workspaceRateAndUnit?.policyID === props.policy?.id) {
+        if (workspaceRateAndUnit?.policyID === props.policy?.id) {
             return;
         }
         Policy.setPolicyIDForReimburseView(props.policy?.id ?? '');
@@ -87,7 +79,7 @@ function WorkspaceRatePage(props: WorkspaceRatePageProps) {
                         currency={props.policy?.outputCurrency ?? CONST.CURRENCY.USD}
                         extraDecimals={1}
                         defaultValue={(
-                            (typeof props.workspaceRateAndUnit?.rate === 'string' ? parseFloat(props.workspaceRateAndUnit.rate) : defaultValue) / CONST.POLICY.CUSTOM_UNIT_RATE_BASE_OFFSET
+                            (typeof workspaceRateAndUnit?.rate === 'string' ? parseFloat(workspaceRateAndUnit.rate) : defaultValue) / CONST.POLICY.CUSTOM_UNIT_RATE_BASE_OFFSET
                         ).toFixed(3)}
                         isCurrencyPressable={false}
                     />
@@ -99,11 +91,4 @@ function WorkspaceRatePage(props: WorkspaceRatePageProps) {
 
 WorkspaceRatePage.displayName = 'WorkspaceRatePage';
 
-export default compose(
-    withOnyx<WorkspaceRatePageProps, WorkspaceRateAndUnitOnyxProps>({
-        workspaceRateAndUnit: {
-            key: ONYXKEYS.WORKSPACE_RATE_AND_UNIT,
-        },
-    }),
-    withPolicy,
-)(WorkspaceRatePage);
+withPolicy(WorkspaceRatePage);

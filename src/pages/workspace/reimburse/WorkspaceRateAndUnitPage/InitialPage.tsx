@@ -1,50 +1,38 @@
 import Str from 'expensify-common/lib/str';
 import React, {useEffect} from 'react';
 import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
-import {withNetwork} from '@components/OnyxProvider';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import compose from '@libs/compose';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import {getUnitTranslationKey} from '@libs/WorkspacesSettingsUtils';
-import withPolicy from '@pages/workspace/withPolicy';
 import type {WithPolicyProps} from '@pages/workspace/withPolicy';
+import withPolicy from '@pages/workspace/withPolicy';
 import WorkspacePageWithSections from '@pages/workspace/WorkspacePageWithSections';
 import * as BankAccounts from '@userActions/BankAccounts';
 import * as Policy from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Network, ReimbursementAccount, WorkspaceRateAndUnit} from '@src/types/onyx';
 import type {Unit} from '@src/types/onyx/Policy';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
-type WorkspaceRateAndUnitPageBaseProps = WithPolicyProps & {
-    // eslint-disable-next-line react/no-unused-prop-types
-    network: OnyxEntry<Network>;
-};
-
-type WorkspaceRateAndUnitOnyxProps = {
-    workspaceRateAndUnit: OnyxEntry<WorkspaceRateAndUnit>;
-    // eslint-disable-next-line react/no-unused-prop-types
-    reimbursementAccount: OnyxEntry<ReimbursementAccount>;
-};
-
-type WorkspaceRateAndUnitPageProps = WorkspaceRateAndUnitPageBaseProps & WorkspaceRateAndUnitOnyxProps;
+type WorkspaceRateAndUnitPageProps = WithPolicyProps;
 
 function WorkspaceRateAndUnitPage(props: WorkspaceRateAndUnitPageProps) {
+    const [network] = useOnyx(ONYXKEYS.NETWORK);
+    const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
+    const [workspaceRateAndUnit] = useOnyx(ONYXKEYS.WORKSPACE_RATE_AND_UNIT);
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
     useEffect(() => {
-        if (props.workspaceRateAndUnit?.policyID === props.policy?.id) {
+        if (workspaceRateAndUnit?.policyID === props.policy?.id) {
             return;
         }
         Policy.setPolicyIDForReimburseView(props.policy?.id ?? '');
@@ -85,8 +73,8 @@ function WorkspaceRateAndUnitPage(props: WorkspaceRateAndUnitPageProps) {
     const distanceCustomUnit = Object.values(props.policy?.customUnits ?? {}).find((unit) => unit.name === CONST.CUSTOM_UNITS.NAME_DISTANCE);
     const distanceCustomRate = Object.values(distanceCustomUnit?.rates ?? {}).find((rate) => rate.name === CONST.CUSTOM_UNITS.DEFAULT_RATE);
 
-    const unitValue = props.workspaceRateAndUnit?.unit ?? distanceCustomUnit?.attributes.unit ?? CONST.CUSTOM_UNITS.DISTANCE_UNIT_MILES;
-    const rateValue = props.workspaceRateAndUnit?.rate ?? distanceCustomRate?.rate?.toString() ?? '';
+    const unitValue = workspaceRateAndUnit?.unit ?? distanceCustomUnit?.attributes.unit ?? CONST.CUSTOM_UNITS.DISTANCE_UNIT_MILES;
+    const rateValue = workspaceRateAndUnit?.rate ?? distanceCustomRate?.rate?.toString() ?? '';
     const unitTitle = Str.recapitalize(translate(getUnitTranslationKey(unitValue)));
 
     const submit = () => {
@@ -150,16 +138,4 @@ function WorkspaceRateAndUnitPage(props: WorkspaceRateAndUnitPageProps) {
 
 WorkspaceRateAndUnitPage.displayName = 'WorkspaceRateAndUnitPage';
 
-export default compose(
-    withOnyx<WorkspaceRateAndUnitPageProps, WorkspaceRateAndUnitOnyxProps>({
-        // @ts-expect-error: ONYXKEYS.REIMBURSEMENT_ACCOUNT is conflicting with ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM
-        reimbursementAccount: {
-            key: ONYXKEYS.REIMBURSEMENT_ACCOUNT,
-        },
-        workspaceRateAndUnit: {
-            key: ONYXKEYS.WORKSPACE_RATE_AND_UNIT,
-        },
-    }),
-    withPolicy,
-    withNetwork(),
-)(WorkspaceRateAndUnitPage);
+export default withPolicy(WorkspaceRateAndUnitPage);

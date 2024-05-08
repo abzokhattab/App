@@ -1,35 +1,29 @@
 import React, {useEffect, useMemo} from 'react';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import Text from '@components/Text';
 import type {UnitItemType} from '@components/UnitPicker';
 import UnitPicker from '@components/UnitPicker';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import compose from '@libs/compose';
 import Navigation from '@libs/Navigation/Navigation';
-import withPolicy from '@pages/workspace/withPolicy';
 import type {WithPolicyProps} from '@pages/workspace/withPolicy';
+import withPolicy from '@pages/workspace/withPolicy';
 import WorkspacePageWithSections from '@pages/workspace/WorkspacePageWithSections';
 import * as Policy from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {WorkspaceRateAndUnit} from '@src/types/onyx';
 
 type WorkspaceUnitPageBaseProps = WithPolicyProps;
 
-type WorkspaceRateAndUnitOnyxProps = {
-    workspaceRateAndUnit: OnyxEntry<WorkspaceRateAndUnit>;
-};
-
-type WorkspaceUnitPageProps = WorkspaceUnitPageBaseProps & WorkspaceRateAndUnitOnyxProps;
+type WorkspaceUnitPageProps = WorkspaceUnitPageBaseProps;
 function WorkspaceUnitPage(props: WorkspaceUnitPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
+    const [workspaceRateAndUnit] = useOnyx(ONYXKEYS.WORKSPACE_RATE_AND_UNIT);
 
     useEffect(() => {
-        if (props.workspaceRateAndUnit?.policyID === props.policy?.id) {
+        if (workspaceRateAndUnit?.policyID === props.policy?.id) {
             return;
         }
         Policy.setPolicyIDForReimburseView(props.policy?.id ?? '');
@@ -60,7 +54,7 @@ function WorkspaceUnitPage(props: WorkspaceUnitPageProps) {
                 <>
                     <Text style={[styles.mh5, styles.mv4]}>{translate('workspace.reimburse.trackDistanceChooseUnit')}</Text>
                     <UnitPicker
-                        defaultValue={props.workspaceRateAndUnit?.unit ?? defaultValue}
+                        defaultValue={workspaceRateAndUnit?.unit ?? defaultValue}
                         onOptionSelected={updateUnit}
                     />
                 </>
@@ -71,11 +65,4 @@ function WorkspaceUnitPage(props: WorkspaceUnitPageProps) {
 
 WorkspaceUnitPage.displayName = 'WorkspaceUnitPage';
 
-export default compose(
-    withOnyx<WorkspaceUnitPageProps, WorkspaceRateAndUnitOnyxProps>({
-        workspaceRateAndUnit: {
-            key: ONYXKEYS.WORKSPACE_RATE_AND_UNIT,
-        },
-    }),
-    withPolicy,
-)(WorkspaceUnitPage);
+export default withPolicy(WorkspaceUnitPage);
