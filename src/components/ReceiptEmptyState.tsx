@@ -121,7 +121,7 @@ function ReceiptEmptyState({hasError = false, onPress, disabled = false, isThumb
             style={[
                 styles.alignItemsCenter,
                 styles.justifyContentCenter,
-                styles.moneyRequestImage,
+                shouldAllowReceiptDrop ? styles.moneyRequestImage : styles.moneyRequestViewImage,
                 isThumbnail ? styles.moneyRequestAttachReceiptThumbnail : styles.moneyRequestAttachReceipt,
                 hasError && styles.borderColorDanger,
             ]}
