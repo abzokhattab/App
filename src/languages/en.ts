@@ -6286,6 +6286,13 @@ const translations = {
             createReport: 'Create report',
             chooseWorkspace: 'Choose a workspace for this report.',
         },
+        emptyReportConfirmation: {
+            title: 'You already have an empty report',
+            message: 'Are you sure you want to create another report? You can access your empty reports in Reports.',
+            createReport: 'Create report',
+            cancel: 'Cancel',
+            dontShowAgain: "Don't show me this again",
+        },
         genericCreateReportFailureMessage: 'Unexpected error creating this chat. Please try again later.',
         genericAddCommentFailureMessage: 'Unexpected error posting the comment. Please try again later.',
         genericUpdateReportFieldFailureMessage: 'Unexpected error updating the field. Please try again later.',

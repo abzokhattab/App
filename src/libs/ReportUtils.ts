@@ -7393,6 +7393,40 @@ function buildOptimisticRoomDescriptionUpdatedReportAction(description: string):
 }
 
 /**
+ * Returns the necessary reportAction onyx data to indicate that members have been invited to a room
+ */
+function buildOptimisticInviteToRoomReportAction(targetAccountIDs: number[], roomName: string): ReportAction {
+    const now = DateUtils.getDBTime();
+    return {
+        reportActionID: rand64(),
+        actionName: CONST.REPORT.ACTIONS.TYPE.ROOM_CHANGE_LOG.INVITE_TO_ROOM,
+        pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
+        actorAccountID: currentUserAccountID,
+        message: [
+            {
+                type: CONST.REPORT.MESSAGE.TYPE.COMMENT,
+                text: translateLocal('workspace.invite.invited'),
+                html: `<muted-text>${translateLocal('workspace.invite.invited')}</muted-text>`,
+            },
+        ],
+        person: [
+            {
+                type: CONST.REPORT.MESSAGE.TYPE.TEXT,
+                style: 'strong',
+                text: getCurrentUserDisplayNameOrEmail(),
+            },
+        ],
+        originalMessage: {
+            targetAccountIDs,
+            roomName,
+            lastModified: now,
+        },
+        created: now,
+        shouldShow: true,
+    };
+}
+
+/**
  * Returns the necessary reportAction onyx data to indicate that the transaction has been put on hold optimistically
  * @param [created] - Action created time
  */
@@ -8037,19 +8071,21 @@ function buildTransactionThread(
     const participantAccountIDs = [...new Set([currentUserAccountID, Number(reportAction?.actorAccountID)])].filter(Boolean) as number[];
     const existingTransactionThreadReport = getReportOrDraftReport(existingTransactionThreadReportID);
 
+    const reportName = getTransactionReportName({reportAction});
+
     if (existingTransactionThreadReportID && existingTransactionThreadReport) {
         return {
             ...existingTransactionThreadReport,
             parentReportActionID: reportAction?.reportActionID,
             parentReportID: moneyRequestReport?.reportID,
-            reportName: getTransactionReportName({reportAction}),
+            reportName,
             policyID: moneyRequestReport?.policyID,
         };
     }
 
     return buildOptimisticChatReport({
         participantList: participantAccountIDs,
-        reportName: getTransactionReportName({reportAction}),
+        reportName,
         policyID: moneyRequestReport?.policyID,
         ownerAccountID: CONST.POLICY.OWNER_ACCOUNT_ID_FAKE,
         notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN,
@@ -9278,6 +9314,28 @@ function getAllWorkspaceReports(policyID?: string): Array<OnyxEntry<Report>> {
         return [];
     }
     return Object.values(allReports ?? {}).filter((report) => report?.policyID === policyID);
+}
+
+/**
+ * Gets all empty expense reports for a specific workspace that are owned by the current user
+ *
+ * @param policyID - the workspace ID to get empty reports for
+ * @returns Array of empty expense reports
+ */
+function getEmptyReportsForWorkspace(policyID?: string): Array<OnyxEntry<Report>> {
+    if (!policyID) {
+        return [];
+    }
+
+    return Object.values(allReports ?? {}).filter((report) => {
+        return (
+            report?.policyID === policyID &&
+            report?.ownerAccountID === currentUserAccountID &&
+            report?.type === CONST.REPORT.TYPE.EXPENSE &&
+            isEmptyReport(report) &&
+            (report.stateNum ?? 0) <= CONST.REPORT.STATE_NUM.SUBMITTED
+        );
+    });
 }
 
 /**
@@ -10513,13 +10571,18 @@ function prepareOnboardingOnyxData(
         .map((task, index) => {
             const taskDescription = typeof task.description === 'function' ? task.description(onboardingTaskParams) : task.description;
             const taskTitle = typeof task.title === 'function' ? task.title(onboardingTaskParams) : task.title;
+            // When creating onboarding tasks for a workspace, use the workspace policyID instead of the Concierge chat policyID
+            // This allows us to properly clean up these tasks when the workspace is deleted
+            // We use the workspace policyID if we're in the context of workspace onboarding (onboardingPolicyID is provided)
+            const taskPolicyID = onboardingPolicyID ? onboardingPolicyID : targetChatPolicyID;
+
             const currentTask = buildOptimisticTaskReport(
                 actorAccountID,
                 targetChatReportID,
                 currentUserAccountID,
                 taskTitle,
                 taskDescription,
-                targetChatPolicyID,
+                taskPolicyID,
                 CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN,
                 task.mediaAttributes,
             );
@@ -11727,6 +11790,7 @@ export {
     buildOptimisticChangePolicyReportAction,
     buildOptimisticRenamedRoomReportAction,
     buildOptimisticRoomDescriptionUpdatedReportAction,
+    buildOptimisticInviteToRoomReportAction,
     buildOptimisticReportPreview,
     buildOptimisticActionableTrackExpenseWhisper,
     buildOptimisticSubmittedReportAction,
@@ -11787,6 +11851,7 @@ export {
     getAllHeldTransactions,
     getAllPolicyReports,
     getAllWorkspaceReports,
+    getEmptyReportsForWorkspace,
     getAvailableReportFields,
     getBankAccountRoute,
     getChatByParticipants,

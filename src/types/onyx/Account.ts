@@ -205,6 +205,9 @@ type Account = {
     /** Whether we should block the transaction thread report creation */
     shouldBlockTransactionThreadReportCreation?: boolean;
 
+    /** Whether the user has dismissed the empty report confirmation modal */
+    dismissedEmptyReportConfirmation?: boolean;
+
     /** Whether or not the user is on a public domain email account or not */
     isFromPublicDomain?: boolean;
 

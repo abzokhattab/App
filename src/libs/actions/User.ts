@@ -1412,6 +1412,10 @@ function setShouldBlockTransactionThreadReportCreation(shouldBlockTransactionThr
     Onyx.merge(ONYXKEYS.ACCOUNT, {shouldBlockTransactionThreadReportCreation});
 }
 
+function setDismissedEmptyReportConfirmation(dismissedEmptyReportConfirmation: boolean) {
+    Onyx.merge(ONYXKEYS.ACCOUNT, {dismissedEmptyReportConfirmation});
+}
+
 function lockAccount() {
     const optimisticData: OnyxUpdate[] = [
         {
@@ -1496,6 +1500,7 @@ export {
     clearValidateCodeActionError,
     setIsDebugModeEnabled,
     setShouldBlockTransactionThreadReportCreation,
+    setDismissedEmptyReportConfirmation,
     resetValidateActionCodeSent,
     lockAccount,
 };

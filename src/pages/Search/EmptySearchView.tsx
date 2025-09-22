@@ -5,6 +5,7 @@ import {Linking, View} from 'react-native';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import BookTravelButton from '@components/BookTravelButton';
 import ConfirmModal from '@components/ConfirmModal';
+import EmptyReportConfirmationModal from '@components/EmptyReportConfirmationModal';
 import EmptyStateComponent from '@components/EmptyStateComponent';
 import type {EmptyStateButton} from '@components/EmptyStateComponent/types';
 import type {FeatureListItem} from '@components/FeatureList';
@@ -28,7 +29,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {startMoneyRequest} from '@libs/actions/IOU';
 import {openOldDotLink} from '@libs/actions/Link';
-import {createNewReport} from '@libs/actions/Report';
+import {createNewReport, createNewReportWithConfirmation} from '@libs/actions/Report';
 import {startTestDrive} from '@libs/actions/Tour';
 import interceptAnonymousUser from '@libs/interceptAnonymousUser';
 import Navigation from '@libs/Navigation/Navigation';
@@ -150,6 +151,9 @@ function EmptySearchViewContent({
     const styles = useThemeStyles();
     const contextMenuAnchor = useRef<RNText>(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [isEmptyReportConfirmationVisible, setIsEmptyReportConfirmationVisible] = useState(false);
+    const [pendingReportCreation, setPendingReportCreation] = useState<(() => void) | null>(null);
+    const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
 
     const [hasTransactions] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION, {
         canBeMissing: true,
@@ -302,10 +306,22 @@ function EmptySearchViewContent({
                                           }
 
                                           if (!shouldRestrictUserBillableActions(workspaceIDForReportCreation)) {
-                                              const createdReportID = createNewReport(currentUserPersonalDetails, workspaceIDForReportCreation);
-                                              Navigation.setNavigationActionToMicrotaskQueue(() => {
-                                                  Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID: createdReportID, backTo: Navigation.getActiveRoute()}));
+                                              const createdReportID = createNewReportWithConfirmation(currentUserPersonalDetails, workspaceIDForReportCreation, false, (onConfirm) => {
+                                                  setPendingReportCreation(() => onConfirm);
+                                                  setPendingNavigation(() => () => {
+                                                      const reportID = createNewReport(currentUserPersonalDetails, workspaceIDForReportCreation);
+                                                      Navigation.setNavigationActionToMicrotaskQueue(() => {
+                                                          Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID, backTo: Navigation.getActiveRoute()}));
+                                                      });
+                                                  });
+                                                  setIsEmptyReportConfirmationVisible(true);
                                               });
+
+                                              if (createdReportID) {
+                                                  Navigation.setNavigationActionToMicrotaskQueue(() => {
+                                                      Navigation.navigate(ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID: createdReportID, backTo: Navigation.getActiveRoute()}));
+                                                  });
+                                              }
                                           } else {
                                               Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(workspaceIDForReportCreation));
                                           }
@@ -462,6 +478,25 @@ function EmptySearchViewContent({
                 title={translate('sidebarScreen.redirectToExpensifyClassicModal.title')}
                 confirmText={translate('exitSurvey.goToExpensifyClassic')}
                 cancelText={translate('common.cancel')}
+            />
+            <EmptyReportConfirmationModal
+                isVisible={isEmptyReportConfirmationVisible}
+                onConfirm={() => {
+                    setIsEmptyReportConfirmationVisible(false);
+                    if (pendingReportCreation) {
+                        pendingReportCreation();
+                        setPendingReportCreation(null);
+                    }
+                    if (pendingNavigation) {
+                        pendingNavigation();
+                        setPendingNavigation(null);
+                    }
+                }}
+                onCancel={() => {
+                    setIsEmptyReportConfirmationVisible(false);
+                    setPendingReportCreation(null);
+                    setPendingNavigation(null);
+                }}
             />
         </>
     );

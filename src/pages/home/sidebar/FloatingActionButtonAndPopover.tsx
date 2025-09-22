@@ -7,6 +7,7 @@ import {View} from 'react-native';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import ConfirmModal from '@components/ConfirmModal';
 import {DelegateNoAccessContext} from '@components/DelegateNoAccessModalProvider';
+import EmptyReportConfirmationModal from '@components/EmptyReportConfirmationModal';
 import FloatingActionButton from '@components/FloatingActionButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import type {PopoverMenuItem} from '@components/PopoverMenu';
@@ -25,7 +26,7 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import {startDistanceRequest, startMoneyRequest} from '@libs/actions/IOU';
 import {openOldDotLink} from '@libs/actions/Link';
 import {navigateToQuickAction} from '@libs/actions/QuickActionNavigation';
-import {createNewReport, startNewChat} from '@libs/actions/Report';
+import {createNewReport, createNewReportWithConfirmation, startNewChat} from '@libs/actions/Report';
 import {isAnonymousUser} from '@libs/actions/Session';
 import {startTestDrive} from '@libs/actions/Tour';
 import getIconForAction from '@libs/getIconForAction';
@@ -123,6 +124,9 @@ function FloatingActionButtonAndPopover({onHideCreateMenu, onShowCreateMenu, isT
 
     const [isCreateMenuActive, setIsCreateMenuActive] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [isEmptyReportConfirmationVisible, setIsEmptyReportConfirmationVisible] = useState(false);
+    const [pendingReportCreation, setPendingReportCreation] = useState<(() => void) | null>(null);
+    const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
     const fabRef = useRef<HTMLDivElement>(null);
     const {windowHeight} = useWindowDimensions();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -487,14 +491,30 @@ function FloatingActionButtonAndPopover({onHideCreateMenu, onShowCreateMenu, isT
                               }
 
                               if (!shouldRestrictUserBillableActions(workspaceIDForReportCreation)) {
-                                  const createdReportID = createNewReport(currentUserPersonalDetails, workspaceIDForReportCreation);
-                                  Navigation.setNavigationActionToMicrotaskQueue(() => {
-                                      Navigation.navigate(
-                                          isSearchTopmostFullScreenRoute()
-                                              ? ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID: createdReportID, backTo: Navigation.getActiveRoute()})
-                                              : ROUTES.REPORT_WITH_ID.getRoute(createdReportID, undefined, undefined, Navigation.getActiveRoute()),
-                                      );
+                                  const createdReportID = createNewReportWithConfirmation(currentUserPersonalDetails, workspaceIDForReportCreation, false, (onConfirm) => {
+                                      setPendingReportCreation(() => onConfirm);
+                                      setPendingNavigation(() => () => {
+                                          const reportID = createNewReport(currentUserPersonalDetails, workspaceIDForReportCreation);
+                                          Navigation.setNavigationActionToMicrotaskQueue(() => {
+                                              Navigation.navigate(
+                                                  isSearchTopmostFullScreenRoute()
+                                                      ? ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID, backTo: Navigation.getActiveRoute()})
+                                                      : ROUTES.REPORT_WITH_ID.getRoute(reportID, undefined, undefined, Navigation.getActiveRoute()),
+                                              );
+                                          });
+                                      });
+                                      setIsEmptyReportConfirmationVisible(true);
                                   });
+
+                                  if (createdReportID) {
+                                      Navigation.setNavigationActionToMicrotaskQueue(() => {
+                                          Navigation.navigate(
+                                              isSearchTopmostFullScreenRoute()
+                                                  ? ROUTES.SEARCH_MONEY_REQUEST_REPORT.getRoute({reportID: createdReportID, backTo: Navigation.getActiveRoute()})
+                                                  : ROUTES.REPORT_WITH_ID.getRoute(createdReportID, undefined, undefined, Navigation.getActiveRoute()),
+                                          );
+                                      });
+                                  }
                               } else {
                                   Navigation.navigate(ROUTES.RESTRICTED_ACTION.getRoute(workspaceIDForReportCreation));
                               }
@@ -613,6 +633,25 @@ function FloatingActionButtonAndPopover({onHideCreateMenu, onShowCreateMenu, isT
                 title={translate('sidebarScreen.redirectToExpensifyClassicModal.title')}
                 confirmText={translate('exitSurvey.goToExpensifyClassic')}
                 cancelText={translate('common.cancel')}
+            />
+            <EmptyReportConfirmationModal
+                isVisible={isEmptyReportConfirmationVisible}
+                onConfirm={() => {
+                    setIsEmptyReportConfirmationVisible(false);
+                    if (pendingReportCreation) {
+                        pendingReportCreation();
+                        setPendingReportCreation(null);
+                    }
+                    if (pendingNavigation) {
+                        pendingNavigation();
+                        setPendingNavigation(null);
+                    }
+                }}
+                onCancel={() => {
+                    setIsEmptyReportConfirmationVisible(false);
+                    setPendingReportCreation(null);
+                    setPendingNavigation(null);
+                }}
             />
             <FloatingActionButton
                 isTooltipAllowed={isTooltipAllowed}

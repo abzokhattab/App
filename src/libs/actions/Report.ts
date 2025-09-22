@@ -98,6 +98,7 @@ import Pusher from '@libs/Pusher';
 import type {UserIsLeavingRoomEvent, UserIsTypingEvent} from '@libs/Pusher/types';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import type {OptimisticAddCommentReportAction, OptimisticChatReport, SelfDMParameters} from '@libs/ReportUtils';
+import {getEmptyReportsForWorkspace} from '@libs/ReportUtils';
 import {
     buildOptimisticAddCommentReportAction,
     buildOptimisticChangeFieldAction,
@@ -107,6 +108,7 @@ import {
     buildOptimisticEmptyReport,
     buildOptimisticExportIntegrationAction,
     buildOptimisticGroupChatReport,
+    buildOptimisticInviteToRoomReportAction,
     buildOptimisticIOUReportAction,
     buildOptimisticMovedReportAction,
     buildOptimisticRenamedRoomReportAction,
@@ -2880,6 +2882,40 @@ function createNewReport(creatorPersonalDetails: PersonalDetails, policyID?: str
 }
 
 /**
+ * Creates a new report with confirmation modal if user already has empty reports
+ * @param creatorPersonalDetails - Personal details of the user creating the report
+ * @param policyID - The workspace ID to create the report in
+ * @param shouldNotifyNewAction - Whether to notify about the new action
+ * @param onShowConfirmationModal - Callback to show the confirmation modal
+ * @returns The report ID if created immediately, or undefined if confirmation is needed
+ */
+function createNewReportWithConfirmation(
+    creatorPersonalDetails: PersonalDetails,
+    policyID?: string,
+    shouldNotifyNewAction = false,
+    onShowConfirmationModal?: (onConfirm: () => void) => void,
+) {
+    // Check if user has dismissed the confirmation modal
+    if (account?.dismissedEmptyReportConfirmation) {
+        return createNewReport(creatorPersonalDetails, policyID, shouldNotifyNewAction);
+    }
+
+    // Check for existing empty reports in the workspace
+    const emptyReports = getEmptyReportsForWorkspace(policyID);
+
+    if (emptyReports.length > 0 && onShowConfirmationModal) {
+        // Show confirmation modal
+        onShowConfirmationModal(() => {
+            createNewReport(creatorPersonalDetails, policyID, shouldNotifyNewAction);
+        });
+        return undefined;
+    }
+
+    // No empty reports or no confirmation modal callback, create report directly
+    return createNewReport(creatorPersonalDetails, policyID, shouldNotifyNewAction);
+}
+
+/**
  * Removes the report after failure to create. Also removes it's related report actions and next step from Onyx.
  */
 function removeFailedReport(reportID: string | undefined) {
@@ -3564,7 +3600,10 @@ function navigateToMostRecentReport(currentReport: OnyxEntry<Report>) {
             Navigation.goBack();
         }
 
-        navigateToConciergeChat(false, () => true, {forceReplace: true});
+        // Use InteractionManager to ensure smooth navigation and avoid skeleton loading
+        InteractionManager.runAfterInteractions(() => {
+            navigateToConciergeChat(false, () => true, {forceReplace: true});
+        });
     }
 }
 
@@ -3788,6 +3827,9 @@ function buildInviteToRoomOnyxData(reportID: string, inviteeEmailsToAccountIDs: 
         return participantCleanUp;
     }, {});
 
+    // Create optimistic invite report action
+    const optimisticInviteAction = buildOptimisticInviteToRoomReportAction(inviteeAccountIDs, report?.reportName ?? '');
+
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -3801,6 +3843,13 @@ function buildInviteToRoomOnyxData(reportID: string, inviteeEmailsToAccountIDs: 
             key: `${ONYXKEYS.COLLECTION.REPORT_METADATA}${reportID}`,
             value: {
                 pendingChatMembers,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`,
+            value: {
+                [optimisticInviteAction.reportActionID]: optimisticInviteAction,
             },
         },
     ];
@@ -3826,6 +3875,15 @@ function buildInviteToRoomOnyxData(reportID: string, inviteeEmailsToAccountIDs: 
                 pendingChatMembers: successPendingChatMembers,
             },
         },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`,
+            value: {
+                [optimisticInviteAction.reportActionID]: {
+                    pendingAction: null,
+                },
+            },
+        },
     ];
     successData.push(...newPersonalDetailsOnyxData.finallyData);
 
@@ -3844,6 +3902,15 @@ function buildInviteToRoomOnyxData(reportID: string, inviteeEmailsToAccountIDs: 
                             errors: getMicroSecondOnyxErrorWithTranslationKey('roomMembersPage.error.genericAdd'),
                         };
                     }) ?? null,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`,
+            value: {
+                [optimisticInviteAction.reportActionID]: {
+                    pendingAction: null,
+                },
             },
         },
     ];
@@ -6104,6 +6171,7 @@ export {
     clearReportFieldKeyErrors,
     completeOnboarding,
     createNewReport,
+    createNewReportWithConfirmation,
     deleteReport,
     deleteReportActionDraft,
     deleteReportComment,
