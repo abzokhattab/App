@@ -1156,12 +1156,17 @@ function PureReportActionItem({
             }
         } else if (isActionOfType(action, CONST.REPORT.ACTIONS.TYPE.APPROVED)) {
             const wasAutoApproved = getOriginalMessage(action)?.automaticAction ?? false;
+            const isPendingAdd = action.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD;
+            const isDEWPolicy = hasDynamicExternalWorkflow(policy);
+
             if (wasAutoApproved) {
                 children = (
                     <ReportActionItemBasicMessage>
                         <RenderHTML html={`<comment><muted-text>${translate('iou.automaticallyApproved')}</muted-text></comment>`} />
                     </ReportActionItemBasicMessage>
                 );
+            } else if (isPendingAdd && isDEWPolicy) {
+                children = <ReportActionItemBasicMessage message={translate('iou.queuedToApproveViaDEW')} />;
             } else {
                 children = <ReportActionItemBasicMessage message={translate('iou.approvedMessage')} />;
             }

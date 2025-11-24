@@ -1297,7 +1297,9 @@ const translations: TranslationDeepObject<typeof en> = {
         submitted: ({memo}: SubmittedWithMemoParams) => `eingereicht${memo ? `, sagte ${memo}` : ''}`,
         automaticallySubmitted: `über <a href="${CONST.SELECT_WORKFLOWS_HELP_URL}">verzögerte Einreichungen</a> eingereicht`,
         queuedToSubmitViaDEW: 'in die Warteschlange gestellt zur Einreichung über benutzerdefinierten Genehmigungsworkflow',
+        queuedToApproveViaDEW: 'in die Warteschlange gestellt zur Genehmigung über benutzerdefinierten Genehmigungsworkflow',
         dynamicExternalWorkflowCannotSubmit: 'Dieser Bericht kann nicht eingereicht werden. Bitte überprüfen Sie die Kommentare zur Behebung.',
+        dynamicExternalWorkflowCannotApprove: 'Dieser Bericht kann nicht genehmigt werden. Bitte überprüfen Sie die Kommentare zur Behebung.',
         trackedAmount: ({formattedAmount, comment}: RequestedAmountMessageParams) => `tracking ${formattedAmount}${comment ? `für ${comment}` : ''}`,
         splitAmount: ({amount}: SplitAmountParams) => `teilen ${amount}`,
         didSplitAmount: ({formattedAmount, comment}: DidSplitAmountMessageParams) => `split ${formattedAmount}${comment ? `für ${comment}` : ''}`,
@@ -1373,6 +1375,7 @@ const translations: TranslationDeepObject<typeof en> = {
             genericEditFailureMessage: 'Unerwarteter Fehler beim Bearbeiten dieser Ausgabe. Bitte versuchen Sie es später erneut.',
             genericSmartscanFailureMessage: 'Transaktion fehlt Felder',
             genericDEWSubmitFailureMessage: 'Fehler beim dynamischen externen Workflow-Einreichung',
+            genericDEWApproveFailureMessage: 'Fehler bei der dynamischen externen Workflow-Genehmigung',
             duplicateWaypointsErrorMessage: 'Bitte entfernen Sie doppelte Wegpunkte',
             atLeastTwoDifferentWaypoints: 'Bitte geben Sie mindestens zwei verschiedene Adressen ein.',
             splitExpenseMultipleParticipantsErrorMessage:

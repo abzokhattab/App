@@ -523,7 +523,7 @@ function MoneyReportHeader({
     };
 
     const confirmApproval = () => {
-        if (hasDynamicExternalWorkflow(policy)) {
+        if (hasDynamicExternalWorkflow(policy) && !isDEWBetaEnabled) {
             showDWEModal();
             return;
         }
@@ -564,7 +564,11 @@ function MoneyReportHeader({
             return {icon: getStatusIcon(expensifyIcons.Hourglass), description: translate('iou.reject.rejectedStatus')};
         }
 
-        if (isDEWBetaEnabled && hasDynamicExternalWorkflow(policy) && moneyRequestReport?.statusNum === CONST.REPORT.STATUS_NUM.OPEN) {
+        if (
+            isDEWBetaEnabled &&
+            hasDynamicExternalWorkflow(policy) &&
+            (moneyRequestReport?.statusNum === CONST.REPORT.STATUS_NUM.OPEN || moneyRequestReport?.statusNum === CONST.REPORT.STATUS_NUM.SUBMITTED)
+        ) {
             const reportActionsObject = reportActions.reduce<OnyxTypes.ReportActions>((acc, action) => {
                 if (action.reportActionID) {
                     acc[action.reportActionID] = action;
@@ -574,6 +578,9 @@ function MoneyReportHeader({
             const {errors} = getAllReportActionsErrorsAndReportActionThatRequiresAttention(moneyRequestReport, reportActionsObject);
             if (errors?.dewSubmitFailed) {
                 return {icon: getStatusIcon(expensifyIcons.Flag), description: translate('iou.dynamicExternalWorkflowCannotSubmit')};
+            }
+            if (errors?.dewApproveFailed) {
+                return {icon: getStatusIcon(expensifyIcons.Flag), description: translate('iou.dynamicExternalWorkflowCannotApprove')};
             }
         }
 

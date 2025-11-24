@@ -10291,27 +10291,32 @@ function approveMoneyRequest(
     const predictedNextStatus = !nextApproverAccountID ? CONST.REPORT.STATUS_NUM.APPROVED : CONST.REPORT.STATUS_NUM.SUBMITTED;
     const predictedNextState = !nextApproverAccountID ? CONST.REPORT.STATE_NUM.APPROVED : CONST.REPORT.STATE_NUM.SUBMITTED;
     const managerID = !nextApproverAccountID ? expenseReport.managerID : nextApproverAccountID;
+    const isDEWPolicy = hasDynamicExternalWorkflow(policy);
 
     // buildOptimisticNextStep is used in parallel
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const optimisticNextStepDeprecated = buildNextStepNew({
-        report: expenseReport,
-        policy,
-        currentUserAccountIDParam,
-        currentUserEmailParam,
-        hasViolations,
-        isASAPSubmitBetaEnabled,
-        predictedNextStatus,
-    });
-    const optimisticNextStep = buildOptimisticNextStep({
-        report: expenseReport,
-        policy,
-        currentUserAccountIDParam,
-        currentUserEmailParam,
-        hasViolations,
-        isASAPSubmitBetaEnabled,
-        predictedNextStatus,
-    });
+    const optimisticNextStepDeprecated = isDEWPolicy
+        ? null
+        : // eslint-disable-next-line @typescript-eslint/no-deprecated
+          buildNextStepNew({
+              report: expenseReport,
+              policy,
+              currentUserAccountIDParam,
+              currentUserEmailParam,
+              hasViolations,
+              isASAPSubmitBetaEnabled,
+              predictedNextStatus,
+          });
+    const optimisticNextStep = isDEWPolicy
+        ? null
+        : buildOptimisticNextStep({
+              report: expenseReport,
+              policy,
+              currentUserAccountIDParam,
+              currentUserEmailParam,
+              hasViolations,
+              isASAPSubmitBetaEnabled,
+              predictedNextStatus,
+          });
     const chatReport = getReportOrDraftReport(expenseReport.chatReportID);
 
     const optimisticReportActionsData: OnyxUpdate = {
@@ -10331,10 +10336,10 @@ function approveMoneyRequest(
         stateNum: predictedNextState,
         statusNum: predictedNextStatus,
         managerID,
-        nextStep: optimisticNextStep ?? undefined,
+        ...(isDEWPolicy ? {} : {nextStep: optimisticNextStep ?? undefined}),
         pendingFields: {
             partial: full ? null : CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
-            nextStep: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
+            ...(isDEWPolicy ? {} : {nextStep: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE}),
         },
     };
     const optimisticIOUReportData: OnyxUpdate = {
