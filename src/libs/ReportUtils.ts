@@ -214,12 +214,14 @@ import {
     isActionableJoinRequestPending,
     isActionableTrackExpense,
     isActionOfType,
+    isApprovedAction,
     isApprovedOrSubmittedReportAction,
     isCardIssuedAction,
     isCreatedTaskReportAction,
     isCurrentActionUnread,
     isDeletedAction,
     isDeletedParentAction,
+    isDynamicExternalWorkflowApproveFailedAction,
     isDynamicExternalWorkflowSubmitFailedAction,
     isExportIntegrationAction,
     isIntegrationMessageAction,
@@ -9279,6 +9281,29 @@ function getAllReportActionsErrorsAndReportActionThatRequiresAttention(
                 reportActionErrors.dewSubmitFailed = getMicroSecondOnyxErrorWithTranslationKey('iou.error.genericDEWSubmitFailureMessage');
                 if (!reportAction) {
                     reportAction = mostRecentDewSubmitFailedAction;
+                }
+            }
+        }
+    }
+
+    if (!isReportArchived && report?.statusNum === CONST.REPORT.STATUS_NUM.SUBMITTED) {
+        const dewApproveFailedAction = reportActionsArray.find((action) => isDynamicExternalWorkflowApproveFailedAction(action));
+        if (dewApproveFailedAction) {
+            const mostRecentApprovedAction = reportActionsArray
+                .filter((action) => isApprovedAction(action))
+                .reduce<ReportAction | undefined>((latest, current) => {
+                    if (!latest || (current.created && latest.created && current.created > latest.created)) {
+                        return current;
+                    }
+                    return latest;
+                }, undefined);
+
+            const shouldShowDEWError = !mostRecentApprovedAction || (mostRecentApprovedAction.created && dewApproveFailedAction.created > mostRecentApprovedAction.created);
+
+            if (shouldShowDEWError) {
+                reportActionErrors.dewApproveFailed = getMicroSecondOnyxErrorWithTranslationKey('iou.error.genericDEWApproveFailureMessage');
+                if (!reportAction) {
+                    reportAction = dewApproveFailedAction;
                 }
             }
         }
