@@ -4899,6 +4899,8 @@ _Per istruzioni più dettagliate, [visita il nostro sito di assistenza](${CONST.
             settlementFrequencyDescription: 'Scegli con quale frequenza pagherai il saldo della tua carta Expensify.',
             settlementFrequencyInfo:
                 'Se desideri passare alla liquidazione mensile, dovrai collegare il tuo conto bancario tramite Plaid e avere una cronologia del saldo positiva degli ultimi 90 giorni.',
+            applyCashbackToBill: 'Applica il cashback alla mia fattura Expensify',
+            applyCashbackToBillDescription: 'Quando è attivo, il cashback guadagnato con la Expensify Card verrà applicato alla tua fattura Expensify.',
             frequency: {
                 daily: 'Giornaliero',
                 monthly: 'Mensile',

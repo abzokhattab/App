@@ -4885,6 +4885,8 @@ _Para instruções mais detalhadas, [visite nosso site de ajuda](${CONST.NETSUIT
             settlementFrequency: 'Frequência de liquidação',
             settlementFrequencyDescription: 'Escolha com que frequência você pagará o saldo do seu Cartão Expensify.',
             settlementFrequencyInfo: 'Se quiser mudar para liquidação mensal, será necessário conectar sua conta bancária via Plaid e ter um histórico de saldo positivo de 90 dias.',
+            applyCashbackToBill: 'Aplicar cashback à minha fatura do Expensify',
+            applyCashbackToBillDescription: 'Quando ativado, o cashback obtido dos gastos com o Cartão Expensify será aplicado à sua fatura do Expensify.',
             frequency: {
                 daily: 'Diário',
                 monthly: 'Mensal',

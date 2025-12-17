@@ -4922,6 +4922,8 @@ _Pour des instructions plus détaillées, [visitez notre site d’aide](${CONST.
             settlementFrequencyDescription: 'Choisissez la fréquence à laquelle vous réglerez le solde de votre Carte Expensify.',
             settlementFrequencyInfo:
                 'Si vous souhaitez passer à un règlement mensuel, vous devrez connecter votre compte bancaire via Plaid et disposer d’un historique de solde positif sur 90 jours.',
+            applyCashbackToBill: 'Appliquer le cashback à ma facture Expensify',
+            applyCashbackToBillDescription: 'Lorsque cette option est activée, le cashback gagné avec la Carte Expensify sera appliqué à votre facture Expensify.',
             frequency: {
                 daily: 'Quotidien',
                 monthly: 'Mensuel',

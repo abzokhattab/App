@@ -4798,6 +4798,8 @@ const translations = {
             settlementFrequency: 'Settlement frequency',
             settlementFrequencyDescription: 'Choose how often you’ll pay your Expensify Card balance.',
             settlementFrequencyInfo: 'If you’d like to switch to monthly settlement, you’ll need to connect your bank account via Plaid and have a positive 90-day balance history.',
+            applyCashbackToBill: 'Apply cash back to my Expensify bill',
+            applyCashbackToBillDescription: 'When enabled, cash back earned from Expensify Card spend will be applied to your Expensify bill.',
             frequency: {
                 daily: 'Daily',
                 monthly: 'Monthly',

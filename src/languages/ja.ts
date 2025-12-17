@@ -4873,6 +4873,8 @@ _より詳しい手順については、[ヘルプサイトをご覧ください
             settlementFrequency: '清算頻度',
             settlementFrequencyDescription: 'Expensify Card の残高を支払う頻度を選択してください。',
             settlementFrequencyInfo: '月次精算に切り替えるには、Plaid を通じて銀行口座を連携し、過去90日間の残高履歴がプラスである必要があります。',
+            applyCashbackToBill: 'キャッシュバックをExpensify請求書に適用',
+            applyCashbackToBillDescription: '有効にすると、Expensifyカードの利用で獲得したキャッシュバックがExpensify請求書に適用されます。',
             frequency: {
                 daily: '毎日',
                 monthly: '毎月',
