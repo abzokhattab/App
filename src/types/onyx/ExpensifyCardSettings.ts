@@ -43,6 +43,9 @@ type ExpensifyCardSettings = OnyxCommon.OnyxValueWithOfflineFeedback<{
 
     /** Number of the bank account used for the card settlement */
     paymentBankAccountNumber?: string;
+
+    /** Whether cash back should be applied to the Expensify bill */
+    shouldApplyCashbackToBill?: boolean;
 }>;
 
 export default ExpensifyCardSettings;

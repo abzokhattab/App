@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
@@ -10,11 +10,13 @@ import useDefaultFundID from '@hooks/useDefaultFundID';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {updateCashbackToBillSetting} from '@libs/actions/Card';
 import {getLastFourDigits} from '@libs/BankAccountUtils';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import Navigation from '@navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@navigation/types';
 import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
+import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -37,6 +39,14 @@ function WorkspaceCardSettingsPage({route}: WorkspaceCardSettingsPageProps) {
     const settlementFrequency = cardSettings?.monthlySettlementDate ? CONST.EXPENSIFY_CARD.FREQUENCY_SETTING.MONTHLY : CONST.EXPENSIFY_CARD.FREQUENCY_SETTING.DAILY;
     const isSettlementFrequencyBlocked = !isMonthlySettlementAllowed && settlementFrequency === CONST.EXPENSIFY_CARD.FREQUENCY_SETTING.DAILY;
     const bankAccountNumber = bankAccountList?.[paymentBankAccountID?.toString() ?? '']?.accountData?.accountNumber ?? paymentBankAccountNumber ?? '';
+    const shouldApplyCashbackToBill = cardSettings?.shouldApplyCashbackToBill ?? false;
+
+    const handleToggleCashbackToBill = useCallback(
+        (isEnabled: boolean) => {
+            updateCashbackToBillSetting(defaultFundID, isEnabled, shouldApplyCashbackToBill);
+        },
+        [defaultFundID, shouldApplyCashbackToBill],
+    );
 
     return (
         <AccessOrNotFoundWrapper
@@ -86,6 +96,16 @@ function WorkspaceCardSettingsPage({route}: WorkspaceCardSettingsPageProps) {
                                 }
                             />
                         </OfflineWithFeedback>
+                        <View style={[styles.mh5, styles.mt5]}>
+                            <ToggleSettingOptionRow
+                                title={translate('workspace.expensifyCard.applyCashbackToBill')}
+                                subtitle={translate('workspace.expensifyCard.applyCashbackToBillDescription')}
+                                switchAccessibilityLabel={translate('workspace.expensifyCard.applyCashbackToBill')}
+                                isActive={shouldApplyCashbackToBill}
+                                onToggle={handleToggleCashbackToBill}
+                                shouldPlaceSubtitleBelowSwitch
+                            />
+                        </View>
                     </View>
                 </ScrollView>
             </ScreenWrapper>
