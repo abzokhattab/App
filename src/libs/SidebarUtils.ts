@@ -685,6 +685,7 @@ function getOptionData({
     lastActionReport,
     movedFromReport,
     movedToReport,
+    chatReport,
     currentUserAccountID,
     visibleReportActionsData,
     reportAttributesDerived,
@@ -709,6 +710,7 @@ function getOptionData({
     lastActionReport: OnyxEntry<Report>;
     movedFromReport?: OnyxEntry<Report>;
     movedToReport?: OnyxEntry<Report>;
+    chatReport: OnyxEntry<Report>;
     currentUserAccountID: number;
     visibleReportActionsData?: VisibleReportActionsDerivedValue;
     reportAttributesDerived?: ReportAttributesDerivedValue['reports'];
@@ -862,7 +864,7 @@ function getOptionData({
             movedToReport,
             policy,
             isReportArchived,
-            chatReport: undefined,
+            chatReport,
             reportMetadata,
             reportAttributesDerived,
             policyTags,

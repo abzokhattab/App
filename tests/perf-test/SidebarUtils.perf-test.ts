@@ -85,6 +85,7 @@ describe('SidebarUtils', () => {
                 translate: translateLocal,
                 localeCompare,
                 lastActionReport: undefined,
+                chatReport: undefined,
                 isReportArchived: undefined,
                 currentUserAccountID: 1,
                 currentUserLogin: CURRENT_USER_LOGIN,

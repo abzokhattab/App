@@ -205,15 +205,6 @@ import type {
  * methods should be named for the views they build options for and then exported for use in a component.
  */
 
-let allReports: OnyxCollection<Report>;
-Onyx.connect({
-    key: ONYXKEYS.COLLECTION.REPORT,
-    waitForCollectionCallback: true,
-    callback: (value) => {
-        allReports = value;
-    },
-});
-
 const lastReportActions: ReportActions = {};
 const allSortedReportActions: Record<string, ReportAction[]> = {};
 let allReportActions: OnyxCollection<ReportActions>;
@@ -609,7 +600,7 @@ function getLastMessageTextForReport({
     const canUserPerformWrite = canUserPerformWriteAction(report, isReportArchived);
     let lastReportAction = lastAction ?? getLastVisibleAction(reportID, canUserPerformWrite, {}, undefined, visibleReportActionsDataParam);
 
-    const resolvedChatReport = chatReport ?? allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`];
+    const resolvedChatReport = chatReport ?? getReportOrDraftReport(report?.chatReportID);
     const transactionThreadReportID = reportID ? getOneTransactionThreadReportID(report, resolvedChatReport, allSortedReportActions[reportID]) : undefined;
 
     if (reportID && !lastAction && transactionThreadReportID) {
@@ -1019,7 +1010,7 @@ function createOption(
             report,
             lastActorDetails,
             isReportArchived: !!result.private_isArchived,
-            chatReport: allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`] ?? undefined,
+            chatReport: getReportOrDraftReport(report?.chatReportID),
             visibleReportActionsDataParam: visibleReportActionsData,
             reportAttributesDerived,
             policyTags,
@@ -1039,7 +1030,7 @@ function createOption(
                       reportAttributesDerived,
                       policyTags,
                       report,
-                      allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${report?.chatReportID}`] ?? undefined,
+                      getReportOrDraftReport(report?.chatReportID),
                   );
 
         const computedReportName = getReportName(report, reportAttributesDerived);
@@ -2251,7 +2242,7 @@ function prepareReportOptionsForDisplay(
             continue;
         }
         const report = option.item;
-        const reportsCollection = reports ?? allReports;
+        const reportsCollection = reports;
         const chatReport = reportsCollection?.[`${ONYXKEYS.COLLECTION.REPORT}${report.chatReportID}`];
         const reportPolicyTags = policyTags?.[`${ONYXKEYS.COLLECTION.POLICY_TAGS}${getNonEmptyStringOnyxID(report?.policyID)}`];
 
@@ -2484,7 +2475,7 @@ function getValidOptions(
             }
 
             const draftComment = draftComments?.[`${ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT}${report.reportID}`];
-            const resolvedReportsMap = reportsCollection ?? allReports;
+            const resolvedReportsMap = reportsCollection;
             const chatReport = resolvedReportsMap?.[`${ONYXKEYS.COLLECTION.REPORT}${report.item.chatReportID}`];
 
             return isValidReport(
@@ -2519,7 +2510,7 @@ function getValidOptions(
                     shouldShowGBR,
                     personalDetails,
                 },
-                reportsCollection ?? allReports,
+                reportsCollection,
                 visibleReportActionsData,
                 reportAttributesDerived,
                 allPolicyTags,
@@ -2542,7 +2533,7 @@ function getValidOptions(
                 shouldShowGBR,
                 personalDetails,
             },
-            reportsCollection ?? allReports,
+            reportsCollection,
             visibleReportActionsData,
             reportAttributesDerived,
             allPolicyTags,
@@ -2561,7 +2552,7 @@ function getValidOptions(
                 shouldShowGBR,
                 personalDetails,
             },
-            reportsCollection ?? allReports,
+            reportsCollection,
             visibleReportActionsData,
             reportAttributesDerived,
             allPolicyTags,
@@ -2933,8 +2924,7 @@ function formatSectionsFromSearchTerm(
                     ? selectedOptions.map((participant) => {
                           const isReportPolicyExpenseChat = participant.isPolicyExpenseChat ?? false;
                           if (isReportPolicyExpenseChat) {
-                              const resolvedReports = reportsParam ?? allReports;
-                              const expenseReport = resolvedReports?.[`${ONYXKEYS.COLLECTION.REPORT}${participant.reportID}`];
+                              const expenseReport = reportsParam?.[`${ONYXKEYS.COLLECTION.REPORT}${participant.reportID}`];
                               const privateIsArchived = privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${expenseReport?.reportID}`];
                               return getPolicyExpenseReportOption(participant, privateIsArchived, currentUserAccountID, personalDetails, expenseReport, reportAttributesDerived);
                           }
@@ -2965,8 +2955,7 @@ function formatSectionsFromSearchTerm(
                 ? selectedParticipantsWithoutDetails.map((participant) => {
                       const isReportPolicyExpenseChat = participant.isPolicyExpenseChat ?? false;
                       if (isReportPolicyExpenseChat) {
-                          const resolvedReports = reportsParam ?? allReports;
-                          const expenseReport = resolvedReports?.[`${ONYXKEYS.COLLECTION.REPORT}${participant.reportID}`];
+                          const expenseReport = reportsParam?.[`${ONYXKEYS.COLLECTION.REPORT}${participant.reportID}`];
                           const privateIsArchived = privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${expenseReport?.reportID}`];
                           return getPolicyExpenseReportOption(participant, privateIsArchived, currentUserAccountID, personalDetails, expenseReport, reportAttributesDerived);
                       }
