@@ -12,6 +12,7 @@ import type {WithCurrentUserPersonalDetailsProps} from '@components/withCurrentU
 import useDefaultExpensePolicy from '@hooks/useDefaultExpensePolicy';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicy from '@hooks/usePolicy';
@@ -108,6 +109,7 @@ function IOURequestStepDistanceManual({
     const isTransactionDraft = shouldUseTransactionDraft(action, iouType);
     const currentUserAccountIDParam = currentUserPersonalDetails.accountID;
     const currentUserEmailParam = currentUserPersonalDetails.login ?? '';
+    const {participantReport, participantChatReport} = useParticipantReport(report, currentUserAccountIDParam);
 
     const shouldUseDefaultExpensePolicy = useMemo(
         () => shouldUseDefaultExpensePolicyUtil(iouType, defaultExpensePolicy, amountOwed, ownerBillingGraceEndPeriod),
@@ -221,6 +223,8 @@ function IOURequestStepDistanceManual({
                 transactionID,
                 reportAttributesDerived,
                 personalDetails,
+                participantReport,
+                participantChatReport,
                 customUnitRateID,
                 manualDistance: distanceAsFloat,
                 currentUserLogin: currentUserEmailParam,
@@ -263,6 +267,8 @@ function IOURequestStepDistanceManual({
             reportID,
             reportAttributesDerived,
             personalDetails,
+            participantReport,
+            participantChatReport,
             customUnitRateID,
             currentUserEmailParam,
             currentUserAccountIDParam,

@@ -6,6 +6,7 @@ import useDefaultExpensePolicy from '@hooks/useDefaultExpensePolicy';
 import useFilesValidation from '@hooks/useFilesValidation';
 import useOnyx from '@hooks/useOnyx';
 import useOptimisticDraftTransactions from '@hooks/useOptimisticDraftTransactions';
+import useParticipantReport from '@hooks/useParticipantReport';
 import useParticipantsPolicyTags from '@hooks/useParticipantsPolicyTags';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
@@ -64,6 +65,7 @@ function useReceiptScan({
     const [transactionViolations] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS);
     const [transactions] = useOptimisticDraftTransactions(initialTransaction);
     const selfDMReport = useSelfDMReport();
+    const {participantReport, participantChatReport} = useParticipantReport(report, currentUserPersonalDetails.accountID);
     const [allTransactionDrafts] = useOnyx(ONYXKEYS.COLLECTION.TRANSACTION_DRAFT, {selector: validTransactionDraftsSelector});
     const [amountOwed] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const [ownerBillingGraceEndPeriod] = useOnyx(ONYXKEYS.NVP_PRIVATE_OWNER_BILLING_GRACE_PERIOD_END);
@@ -101,8 +103,18 @@ function useReceiptScan({
     const [recentWaypoints] = useOnyx(ONYXKEYS.NVP_RECENT_WAYPOINTS);
 
     const participants = useMemo(
-        () => getMoneyRequestParticipantOptions(currentUserPersonalDetails.accountID, report, policy, personalDetails, reportNameValuePairs?.private_isArchived, reportAttributesDerived),
-        [currentUserPersonalDetails.accountID, report, policy, personalDetails, reportNameValuePairs?.private_isArchived, reportAttributesDerived],
+        () =>
+            getMoneyRequestParticipantOptions(
+                currentUserPersonalDetails.accountID,
+                report,
+                policy,
+                personalDetails,
+                participantReport,
+                participantChatReport,
+                reportNameValuePairs?.private_isArchived,
+                reportAttributesDerived,
+            ),
+        [currentUserPersonalDetails.accountID, report, policy, personalDetails, participantReport, participantChatReport, reportNameValuePairs?.private_isArchived, reportAttributesDerived],
     );
 
     const participantsPolicyTags = useParticipantsPolicyTags(participants);

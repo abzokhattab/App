@@ -11,6 +11,7 @@ import useDefaultExpensePolicy from '@hooks/useDefaultExpensePolicy';
 import useDuplicateTransactionsAndViolations from '@hooks/useDuplicateTransactionsAndViolations';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
@@ -137,6 +138,7 @@ function IOURequestStepAmount({
 
     const currentUserAccountIDParam = currentUserPersonalDetails.accountID;
     const currentUserEmailParam = currentUserPersonalDetails.login ?? '';
+    const {participantReport} = useParticipantReport(report, currentUserAccountIDParam);
 
     // For quick button actions, we'll skip the confirmation page unless the report is archived or this is a workspace request, as
     // the user will have to add a merchant.
@@ -229,7 +231,18 @@ function IOURequestStepAmount({
                 const privateIsArchived = privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${participant.reportID}`];
                 return participantAccountID
                     ? getParticipantsOption(participant, personalDetails)
-                    : getReportOption(participant, privateIsArchived, policy, currentUserAccountIDParam, personalDetails, reportAttributesDerived);
+                    : getReportOption(
+                          participant,
+                          privateIsArchived,
+                          policy,
+                          currentUserAccountIDParam,
+                          personalDetails,
+                          reportAttributesDerived,
+                          undefined,
+                          undefined,
+                          {},
+                          participantReport,
+                      );
             });
             const backendAmount = convertToBackendAmount(Number.parseFloat(amount));
 
