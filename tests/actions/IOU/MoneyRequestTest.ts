@@ -448,7 +448,16 @@ describe('MoneyRequest', () => {
                 },
             });
             baseParams.recentWaypoints = (await getOnyxValue(ONYXKEYS.NVP_RECENT_WAYPOINTS)) ?? [];
-            baseParams.participants = getMoneyRequestParticipantOptions(baseParams.currentUserAccountID, baseParams.report, baseParams.policy, baseParams.personalDetails, undefined, {});
+            baseParams.participants = getMoneyRequestParticipantOptions(
+                baseParams.currentUserAccountID,
+                baseParams.report,
+                baseParams.policy,
+                baseParams.personalDetails,
+                undefined,
+                undefined,
+                undefined,
+                {},
+            );
             await getOnyxData({
                 key: `${ONYXKEYS.COLLECTION.POLICY_TAGS}`,
                 waitForCollectionCallback: true,
@@ -567,7 +576,16 @@ describe('MoneyRequest', () => {
                 ...fakeReport,
                 chatType: CONST.REPORT.CHAT_TYPE.POLICY_ROOM,
             };
-            baseParams.participants = getMoneyRequestParticipantOptions(baseParams.currentUserAccountID, report, baseParams.policy, baseParams.personalDetails, undefined, {});
+            baseParams.participants = getMoneyRequestParticipantOptions(
+                baseParams.currentUserAccountID,
+                report,
+                baseParams.policy,
+                baseParams.personalDetails,
+                undefined,
+                undefined,
+                undefined,
+                {},
+            );
 
             await getOnyxData({
                 key: `${ONYXKEYS.COLLECTION.POLICY_TAGS}`,
@@ -939,6 +957,8 @@ describe('MoneyRequest', () => {
             isSelfTourViewed: false,
             amountOwed: 0,
             draftTransactionIDs: undefined,
+            participantReport: undefined,
+            participantChatReport: undefined,
         };
         const splitShares: SplitShares = {
             [firstSplitParticipantID]: {

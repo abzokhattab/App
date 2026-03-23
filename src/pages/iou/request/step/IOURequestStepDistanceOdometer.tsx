@@ -16,6 +16,7 @@ import useDiscardChangesConfirmation from '@hooks/useDiscardChangesConfirmation'
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicy from '@hooks/usePolicy';
 import usePolicyForMovingExpenses from '@hooks/usePolicyForMovingExpenses';
@@ -134,6 +135,7 @@ function IOURequestStepDistanceOdometer({
     const isCreatingNewRequest = !isEditingConfirmation && !isEditing;
     const isTransactionDraft = shouldUseTransactionDraft(action, iouType);
     const currentUserAccountIDParam = currentUserPersonalDetails.accountID;
+    const {participantReport, participantChatReport} = useParticipantReport(report, currentUserAccountIDParam);
     const currentUserEmailParam = currentUserPersonalDetails.login ?? '';
     const [shouldEnableDiscardConfirmation, setShouldEnableDiscardConfirmation] = useState(!isEditingConfirmation && !isEditing);
 
@@ -475,6 +477,8 @@ function IOURequestStepDistanceOdometer({
             transactionID,
             reportAttributesDerived,
             personalDetails,
+            participantReport,
+            participantChatReport,
             customUnitRateID,
             currentUserLogin: currentUserEmailParam,
             currentUserAccountID: currentUserAccountIDParam,

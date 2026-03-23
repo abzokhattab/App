@@ -140,6 +140,8 @@ type MoneyRequestStepDistanceNavigationParams = {
     transaction?: Transaction;
     reportAttributesDerived?: Record<string, ReportAttributes>;
     personalDetails: OnyxEntry<PersonalDetailsList>;
+    participantReport: OnyxEntry<Report>;
+    participantChatReport: OnyxEntry<Report>;
     waypoints?: WaypointCollection;
     customUnitRateID: string;
     manualDistance?: number;
@@ -288,6 +290,8 @@ function getMoneyRequestParticipantOptions(
     report: OnyxEntry<Report>,
     policy: OnyxEntry<Policy>,
     personalDetails: OnyxEntry<PersonalDetailsList>,
+    participantReport: OnyxEntry<Report>,
+    _participantChatReport: OnyxEntry<Report>,
     privateIsArchived?: string,
     reportAttributesDerived?: ReportAttributesDerivedValue['reports'],
 ): Array<Participant | OptionData> {
@@ -296,7 +300,7 @@ function getMoneyRequestParticipantOptions(
         const participantAccountID = participant?.accountID ?? CONST.DEFAULT_NUMBER_ID;
         return participantAccountID
             ? getParticipantsOption(participant, personalDetails)
-            : getReportOption(participant, privateIsArchived, policy, currentUserAccountID, personalDetails, reportAttributesDerived, undefined, undefined, {}, undefined);
+            : getReportOption(participant, privateIsArchived, policy, currentUserAccountID, personalDetails, reportAttributesDerived, undefined, undefined, {}, participantReport);
     });
 }
 
@@ -557,6 +561,8 @@ function handleMoneyRequestStepDistanceNavigation({
     transactionID,
     reportAttributesDerived,
     personalDetails,
+    participantReport,
+    participantChatReport,
     waypoints,
     customUnitRateID,
     manualDistance,
@@ -615,7 +621,16 @@ function handleMoneyRequestStepDistanceNavigation({
     // to the confirm step.
     // If the user started this flow using the Create expense option (combined submit/track flow), they should be redirected to the participants page.
     if (report?.reportID && !isArchivedExpenseReport && iouType !== CONST.IOU.TYPE.CREATE) {
-        const participants = getMoneyRequestParticipantOptions(currentUserAccountID, report, policy, personalDetails, privateIsArchived, reportAttributesDerived);
+        const participants = getMoneyRequestParticipantOptions(
+            currentUserAccountID,
+            report,
+            policy,
+            personalDetails,
+            participantReport,
+            participantChatReport,
+            privateIsArchived,
+            reportAttributesDerived,
+        );
 
         setDistanceRequestData?.(participants);
         if (shouldSkipConfirmation) {

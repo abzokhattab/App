@@ -18,6 +18,7 @@ import useFetchRoute from '@hooks/useFetchRoute';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicy from '@hooks/usePolicy';
@@ -80,7 +81,7 @@ function IOURequestStepDistance({
     const {isOffline} = useNetwork();
     const {translate} = useLocalize();
     const {isBetaEnabled} = usePermissions();
-    const [allReports] = useOnyx(ONYXKEYS.COLLECTION.REPORT);
+    const {participantReport, participantChatReport} = useParticipantReport(report, currentUserPersonalDetails.accountID);
     const [reportNameValuePairs] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${report?.reportID}`);
     const isArchived = isArchivedReport(reportNameValuePairs);
     const [parentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${getNonEmptyStringOnyxID(report?.parentReportID)}`);
@@ -184,8 +185,10 @@ function IOURequestStepDistance({
         (participants: Participant[]) => {
             // Get policy report based on transaction participants
             const isPolicyExpenseChat = participants?.some((participant) => participant.isPolicyExpenseChat);
-            const selectedReportID = participants?.length === 1 ? (participants.at(0)?.reportID ?? reportID) : reportID;
-            const policyReport = participants.at(0) ? allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${selectedReportID}`] : report;
+            let policyReport = report;
+            if (participants.at(0)) {
+                policyReport = participants.length === 1 ? (participantReport ?? report) : report;
+            }
 
             const IOUpolicyID = getIOURequestPolicyID(transaction, policyReport);
             // This will be fixed as part of https://github.com/Expensify/Expensify/issues/507850
@@ -211,7 +214,7 @@ function IOURequestStepDistance({
                 setSplitShares(transaction, amount, currency ?? '', participantAccountIDs ?? []);
             }
         },
-        [report, allReports, transaction, transactionID, isSplitRequest, policy?.outputCurrency, reportID, customUnitRateID, personalPolicy?.outputCurrency],
+        [report, participantReport, transaction, transactionID, isSplitRequest, policy?.outputCurrency, reportID, customUnitRateID, personalPolicy?.outputCurrency],
     );
 
     // For quick button actions, we'll skip the confirmation page unless the report is archived or this is a workspace
@@ -322,6 +325,8 @@ function IOURequestStepDistance({
             transactionID,
             reportAttributesDerived,
             personalDetails,
+            participantReport,
+            participantChatReport,
             waypoints,
             customUnitRateID,
             currentUserLogin: currentUserEmailParam,
@@ -360,6 +365,8 @@ function IOURequestStepDistance({
         transactionID,
         reportAttributesDerived,
         personalDetails,
+        participantReport,
+        participantChatReport,
         waypoints,
         customUnitRateID,
         currentUserEmailParam,

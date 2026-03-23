@@ -12,6 +12,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePrivateIsArchivedMap from '@hooks/usePrivateIsArchivedMap';
@@ -78,6 +79,7 @@ function SubmitDetailsPage({
 
     const [betas] = useOnyx(ONYXKEYS.BETAS);
     const currentUserPersonalDetails = useCurrentUserPersonalDetails();
+    const {participantReport} = useParticipantReport(report, currentUserPersonalDetails.accountID);
     const personalPolicy = usePersonalPolicy();
     const [startLocationPermissionFlow, setStartLocationPermissionFlow] = useState(false);
 
@@ -123,7 +125,18 @@ function SubmitDetailsPage({
         const privateIsArchived = privateIsArchivedMap[`${ONYXKEYS.COLLECTION.REPORT_NAME_VALUE_PAIRS}${participant.reportID}`];
         return participant?.accountID
             ? getParticipantsOption(participant, personalDetails)
-            : getReportOption(participant, privateIsArchived, policy, currentUserPersonalDetails.accountID, personalDetails, reportAttributesDerived, undefined, undefined, {}, undefined);
+            : getReportOption(
+                  participant,
+                  privateIsArchived,
+                  policy,
+                  currentUserPersonalDetails.accountID,
+                  personalDetails,
+                  reportAttributesDerived,
+                  undefined,
+                  undefined,
+                  {},
+                  participantReport,
+              );
     });
     const trimmedComment = transaction?.comment?.comment?.trim() ?? '';
     const transactionAmount = transaction?.amount ?? 0;

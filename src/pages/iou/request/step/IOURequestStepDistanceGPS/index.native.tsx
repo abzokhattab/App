@@ -5,6 +5,7 @@ import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalD
 import useDefaultExpensePolicy from '@hooks/useDefaultExpensePolicy';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useParticipantReport from '@hooks/useParticipantReport';
 import usePermissions from '@hooks/usePermissions';
 import usePersonalPolicy from '@hooks/usePersonalPolicy';
 import usePolicy from '@hooks/usePolicy';
@@ -77,6 +78,7 @@ function IOURequestStepDistanceGPS({
     const [activePolicyID] = useOnyx(ONYXKEYS.NVP_ACTIVE_POLICY_ID);
     const currentUserAccountIDParam = currentUserPersonalDetails.accountID;
     const currentUserEmailParam = currentUserPersonalDetails.login ?? '';
+    const {participantReport, participantChatReport} = useParticipantReport(report, currentUserAccountIDParam);
 
     const shouldUseDefaultExpensePolicy = shouldUseDefaultExpensePolicyUtil(iouType, defaultExpensePolicy, amountOwed, ownerBillingGraceEndPeriod);
 
@@ -103,6 +105,8 @@ function IOURequestStepDistanceGPS({
             transactionID,
             reportAttributesDerived,
             personalDetails,
+            participantReport,
+            participantChatReport,
             waypoints,
             customUnitRateID,
             currentUserLogin: currentUserEmailParam,

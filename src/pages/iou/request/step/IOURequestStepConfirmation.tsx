@@ -24,6 +24,7 @@ import useOnboardingTaskInformation from '@hooks/useOnboardingTaskInformation';
 import useOnyx from '@hooks/useOnyx';
 import useOptimisticDraftTransactions from '@hooks/useOptimisticDraftTransactions';
 import useParentReportAction from '@hooks/useParentReportAction';
+import useParticipantReport from '@hooks/useParticipantReport';
 import useParticipantsInvoiceReport from '@hooks/useParticipantsInvoiceReport';
 import useParticipantsPolicyTags from '@hooks/useParticipantsPolicyTags';
 import usePermissions from '@hooks/usePermissions';
@@ -224,6 +225,8 @@ function IOURequestStepConfirmation({
         return reportWithDraftFallback;
     }, [isUnreported, shouldUseTransactionReport, transactionReport, reportWithDraftFallback, isTransactionReportDifferentFromRoute]);
 
+    const {participantReport} = useParticipantReport(report, currentUserPersonalDetails.accountID);
+
     const {policy} = usePolicyForTransaction({
         transaction: initialTransaction,
         reportPolicyID: realPolicyID ?? draftPolicyID,
@@ -353,10 +356,10 @@ function IOURequestStepConfirmation({
                           reportDrafts,
                           undefined,
                           {},
-                          undefined,
+                          participantReport,
                       );
             }) ?? [],
-        [transaction?.participants, iouType, personalDetails, reportAttributesDerived, reportDrafts, privateIsArchivedMap, policy, currentUserPersonalDetails.accountID],
+        [transaction?.participants, iouType, personalDetails, reportAttributesDerived, reportDrafts, privateIsArchivedMap, policy, currentUserPersonalDetails.accountID, participantReport],
     );
     const participantsPolicyTags = useParticipantsPolicyTags(participants ?? []);
     const isPolicyExpenseChat = useMemo(() => participants?.some((participant) => participant.isPolicyExpenseChat), [participants]);
