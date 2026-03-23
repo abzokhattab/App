@@ -1,0 +1,38 @@
+---
+description: Git workflow for splitting large PRs into smaller, independently mergeable pieces
+alwaysApply: true
+---
+
+# PR Splitting Workflow
+
+When a PR touches more than ~15 files or spans multiple architectural layers, split it into smaller PRs.
+
+## Splitting Strategy
+
+1. **Split by layer** -- core library/utility changes first, then callers.
+2. **Backward compatibility** -- new params in shared functions should be optional with fallbacks so earlier PRs don't break existing callers.
+3. **Independent mergeability** -- every PR must pass CI (typecheck, lint, tests) on its own.
+4. **Parallel where possible** -- if two caller-layer PRs touch non-overlapping files, they can target the same base and be reviewed concurrently.
+
+## Branch & PR Conventions
+
+- Branch from `main` for the first PR; branch from the previous PR's branch for dependent follow-ups.
+- Name branches: `<author>/<issue>-part<N>-<short-desc>` (e.g. `akhattab/66378-part1-optionslistutils-api`).
+- PR title: prefix with the part number (e.g. `[1/4] Refactor OptionsListUtils signatures`).
+- PR description: link the parent issue, list the full split plan, and note which PRs this depends on.
+- After a base PR merges, rebase dependent branches onto `main`.
+
+## Typical 4-PR Pattern for Onyx Refactors
+
+1. **API layer** -- change function signatures to accept explicit data params (optional, with fallback to existing global).
+2. **Hook + primary callers** -- add a new hook or selector, update the largest caller group.
+3. **Secondary callers** -- update remaining callers (search, chat, invite flows).
+4. **Cleanup** -- remove the global `Onyx.connect`, make params required, update LHN/sidebar path.
+
+## Checklist Before Opening Each Sub-PR
+
+- [ ] Only files relevant to this slice are changed.
+- [ ] New params are optional with sensible defaults (unless this is the final cleanup PR).
+- [ ] Tests covering changed functions are updated.
+- [ ] Run `npx prettier --write <files>`, `npx eslint <files> --max-warnings=0`, and `npm run typecheck-tsgo`.
+- [ ] PR description references the parent issue and the split plan.
