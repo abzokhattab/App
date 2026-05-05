@@ -692,13 +692,6 @@ function initMoneyRequest({
                 waypoint1: {keyForList: 'stop_waypoint'},
             };
         }
-        // Initialize odometer readings for odometer type
-        if (newIouRequestType === CONST.IOU.REQUEST_TYPE.DISTANCE_ODOMETER) {
-            comment.odometerStart = undefined;
-            comment.odometerEnd = undefined;
-            comment.odometerStartImage = undefined;
-            comment.odometerEndImage = undefined;
-        }
     }
 
     if (newIouRequestType === CONST.IOU.REQUEST_TYPE.PER_DIEM) {
