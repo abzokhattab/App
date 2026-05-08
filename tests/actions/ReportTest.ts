@@ -22,6 +22,7 @@ import playSound, {SOUNDS} from '@libs/Sound';
 import CONST from '@src/CONST';
 import OnyxUpdateManager from '@src/libs/actions/OnyxUpdateManager';
 import * as PersistedRequests from '@src/libs/actions/PersistedRequests';
+import {initReconnect} from '@src/libs/actions/Reconnect';
 import * as Report from '@src/libs/actions/Report';
 import * as User from '@src/libs/actions/User';
 import DateUtils from '@src/libs/DateUtils';
@@ -173,6 +174,7 @@ jest.mock('react-native-blob-util', () => ({
 
 const originalXHR = HttpUtils.xhr;
 OnyxUpdateManager();
+initReconnect();
 
 // Define introSelected to use across all openReport tests
 const TEST_INTRO_SELECTED: OnyxTypes.IntroSelected = {
@@ -241,7 +243,7 @@ describe('actions/Report', () => {
         // Set up Onyx with some test user data
         return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN)
             .then(() => {
-                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, undefined);
+                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN, undefined);
                 return waitForBatchedUpdates();
             })
             .then(() => TestHelper.setPersonalDetails(TEST_USER_LOGIN, TEST_USER_ACCOUNT_ID))
@@ -533,7 +535,7 @@ describe('actions/Report', () => {
             .then(waitForNetworkPromises)
             .then(() => {
                 // Given a test user that is subscribed to Pusher events
-                User.subscribeToUserEvents(USER_1_ACCOUNT_ID, undefined);
+                User.subscribeToUserEvents(USER_1_ACCOUNT_ID, USER_1_LOGIN, undefined);
                 return waitForBatchedUpdates();
             })
             .then(() => TestHelper.setPersonalDetails(USER_1_LOGIN, USER_1_ACCOUNT_ID))
@@ -882,10 +884,10 @@ describe('actions/Report', () => {
         };
 
         // Setup user and pusher listeners
-        return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID)
+        return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN)
             .then(waitForBatchedUpdates)
             .then(() => {
-                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, undefined);
+                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN, undefined);
                 return waitForBatchedUpdates();
             })
             .then(() => {
@@ -942,7 +944,7 @@ describe('actions/Report', () => {
         // Set up Onyx with some test user data
         return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN)
             .then(() => {
-                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, undefined);
+                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN, undefined);
                 return waitForBatchedUpdates();
             })
             .then(() => TestHelper.setPersonalDetails(TEST_USER_LOGIN, TEST_USER_ACCOUNT_ID))
@@ -1079,7 +1081,7 @@ describe('actions/Report', () => {
         // Set up Onyx with some test user data
         return TestHelper.signInWithTestUser(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN)
             .then(() => {
-                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, undefined);
+                User.subscribeToUserEvents(TEST_USER_ACCOUNT_ID, TEST_USER_LOGIN, undefined);
                 return waitForBatchedUpdates();
             })
             .then(() => TestHelper.setPersonalDetails(TEST_USER_LOGIN, TEST_USER_ACCOUNT_ID))
@@ -4098,7 +4100,6 @@ describe('actions/Report', () => {
             };
             const policy = createRandomPolicy(Number(1));
             Report.buildOptimisticChangePolicyData(report, undefined, policy, 1, '', false, true, undefined);
-            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(buildNextStepNew).toHaveBeenCalledWith({
                 report,
                 policy,
@@ -7645,6 +7646,85 @@ describe('actions/Report', () => {
             // Verify the invitee was also added to the parent report participants
             const updatedParentReport = await getOnyxValue(`${ONYXKEYS.COLLECTION.REPORT}${PARENT_REPORT_ID}` as const);
             expect(updatedParentReport?.participants?.[INVITEE_ACCOUNT_ID]).toMatchObject({
+                notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
+                role: CONST.REPORT.ROLE.MEMBER,
+            });
+        });
+
+        it('should fall back to ancestor report via parentReportID when parentReport matches current report', async () => {
+            global.fetch = TestHelper.getGlobalFetchMock();
+
+            const TRANSACTION_THREAD_ID = '20';
+            const ANCESTOR_IOU_REPORT_ID = '21';
+            const WHISPER_ACTION_ID = '20001';
+            const EXISTING_PARTICIPANT_ID = 100;
+            const INVITEE_ACCOUNT_ID = 200;
+
+            // Transaction thread report — parentReportID points to the IOU ancestor
+            const transactionThreadReport: OnyxTypes.Report = {
+                ...createRandomReport(20, undefined),
+                reportID: TRANSACTION_THREAD_ID,
+                parentReportID: ANCESTOR_IOU_REPORT_ID,
+                participants: {
+                    [EXISTING_PARTICIPANT_ID]: {
+                        notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
+                        role: CONST.REPORT.ROLE.ADMIN,
+                    },
+                },
+                lastMessageText: 'Receipt',
+                lastVisibleActionCreated: '2024-11-19 08:04:13.728',
+                lastActorAccountID: EXISTING_PARTICIPANT_ID,
+            };
+
+            // Ancestor IOU report (money request report)
+            const ancestorIOUReport: OnyxTypes.Report = {
+                ...createRandomReport(21, undefined),
+                reportID: ANCESTOR_IOU_REPORT_ID,
+                type: CONST.REPORT.TYPE.IOU,
+                participants: {
+                    [EXISTING_PARTICIPANT_ID]: {
+                        notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
+                        role: CONST.REPORT.ROLE.ADMIN,
+                    },
+                },
+            };
+
+            const whisperAction = {
+                reportActionID: WHISPER_ACTION_ID,
+                reportID: TRANSACTION_THREAD_ID,
+                actionName: CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_MENTION_WHISPER,
+                created: '2024-11-19 08:04:13.730',
+                message: [{html: 'Mentioned @user1', text: 'Mentioned @user1', type: 'COMMENT'}],
+                originalMessage: {
+                    inviteeAccountIDs: [INVITEE_ACCOUNT_ID],
+                    inviteeEmails: ['user1@example.com'],
+                    whisperedTo: [EXISTING_PARTICIPANT_ID],
+                },
+            } as unknown as OnyxTypes.ReportAction;
+
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${TRANSACTION_THREAD_ID}`, transactionThreadReport);
+            await Onyx.merge(`${ONYXKEYS.COLLECTION.REPORT}${ANCESTOR_IOU_REPORT_ID}`, ancestorIOUReport);
+            await Onyx.mergeCollection(ONYXKEYS.COLLECTION.REPORT_ACTIONS, {
+                [`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${TRANSACTION_THREAD_ID}`]: {
+                    [WHISPER_ACTION_ID]: whisperAction,
+                },
+            });
+            await waitForBatchedUpdates();
+
+            // Pass parentReport as the same report (simulating viewing transaction thread directly)
+            Report.resolveActionableMentionWhisper(transactionThreadReport, whisperAction, CONST.REPORT.ACTIONABLE_MENTION_WHISPER_RESOLUTION.INVITE, false, transactionThreadReport);
+            await waitForBatchedUpdates();
+
+            // Verify the invitee was added to the transaction thread participants
+            const updatedThreadReport = await getOnyxValue(`${ONYXKEYS.COLLECTION.REPORT}${TRANSACTION_THREAD_ID}` as const);
+            expect(updatedThreadReport?.participants?.[INVITEE_ACCOUNT_ID]).toMatchObject({
+                notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
+                role: CONST.REPORT.ROLE.MEMBER,
+            });
+
+            // Verify the invitee was also added to the ancestor IOU report via the fallback path
+            const updatedAncestorReport = await getOnyxValue(`${ONYXKEYS.COLLECTION.REPORT}${ANCESTOR_IOU_REPORT_ID}` as const);
+            expect(updatedAncestorReport?.participants?.[INVITEE_ACCOUNT_ID]).toMatchObject({
                 notificationPreference: CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
                 role: CONST.REPORT.ROLE.MEMBER,
             });
