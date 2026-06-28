@@ -2979,61 +2979,44 @@ describe('TransactionUtils', () => {
                 expect(result.change.reimbursable).toEqual(expect.arrayContaining([true, false]));
             });
 
-            it('should force reimbursable to false and suppress the step when the selected transaction is a managed card', () => {
-                const cashTransaction = generateTransaction({
-                    reimbursable: true,
-                    managedCard: false,
-                });
-
+            it('should force reimbursable to false and not show the step when the reviewing (kept) transaction is a managed card', () => {
                 const managedCardTransaction = generateTransaction({
                     reimbursable: false,
                     managedCard: true,
                 });
 
-                const duplicates = [managedCardTransaction];
+                const duplicates = [
+                    generateTransaction({
+                        reimbursable: true,
+                        managedCard: false,
+                    }),
+                ];
 
-                // When the user keeps the managed card transaction, reimbursable must be forced to false.
-                const resultKeepingCard = TransactionUtils.compareDuplicateTransactionFields(
-                    {},
-                    cashTransaction,
-                    duplicates,
-                    mockReport,
-                    managedCardTransaction.transactionID,
-                    mockPolicy,
-                    undefined,
-                );
+                const result = TransactionUtils.compareDuplicateTransactionFields({}, managedCardTransaction, duplicates, mockReport, undefined, mockPolicy, undefined);
 
-                expect(resultKeepingCard.keep.reimbursable).toBe(false);
-                expect(resultKeepingCard.change.reimbursable).toBeUndefined();
+                expect(result.keep.reimbursable).toBe(false);
+                expect(result.change.reimbursable).toBeUndefined();
             });
 
-            it('should show the reimbursable step when the user keeps the cash duplicate and the managed card is discarded', () => {
+            it('should not force reimbursable to false when the reviewing (kept) transaction is a cash expense, even if a duplicate is a managed card', () => {
                 const cashTransaction = generateTransaction({
                     reimbursable: true,
                     managedCard: false,
                 });
 
-                const managedCardTransaction = generateTransaction({
-                    reimbursable: false,
-                    managedCard: true,
-                });
+                const duplicates = [
+                    generateTransaction({
+                        reimbursable: false,
+                        managedCard: true,
+                    }),
+                ];
 
-                const duplicates = [managedCardTransaction];
+                const result = TransactionUtils.compareDuplicateTransactionFields({}, cashTransaction, duplicates, mockReport, undefined, mockPolicy, undefined);
 
-                // When the user keeps the cash expense (discarding the managed card), the cash
-                // transaction's reimbursable value should not be silently overridden.
-                const resultKeepingCash = TransactionUtils.compareDuplicateTransactionFields(
-                    {},
-                    cashTransaction,
-                    duplicates,
-                    mockReport,
-                    cashTransaction.transactionID,
-                    mockPolicy,
-                    undefined,
-                );
-
-                expect(resultKeepingCash.keep.reimbursable).toBeUndefined();
-                expect(resultKeepingCash.change.reimbursable).toEqual(expect.arrayContaining([true, false]));
+                // The kept cash expense must not be silently converted to non-reimbursable; the differing values are
+                // surfaced as a review step instead.
+                expect(result.keep.reimbursable).toBeUndefined();
+                expect(result.change.reimbursable).toEqual(expect.arrayContaining([true, false]));
             });
         });
 
