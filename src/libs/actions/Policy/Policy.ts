@@ -3473,7 +3473,7 @@ function buildOptimisticDuplicatePolicy(
         areTagsEnabled: isTagsFeatureSelected,
         areDistanceRatesEnabled: isDistanceRatesFeatureSelected,
         areInvoicesEnabled: isInvoicesFeatureSelected,
-        areRulesEnabled: isRulesFeatureSelected ? PolicyUtils.arePolicyRulesEnabled(sourcePolicy, duplicatedPolicyCategories) : false,
+        areRulesEnabled: isRulesFeatureSelected ? sourcePolicy?.areRulesEnabled === true : false,
         areWorkflowsEnabled: isWorkflowsFeatureSelected,
         areReportFieldsEnabled: isReportsFeatureSelected ? sourcePolicy?.areReportFieldsEnabled : false,
         areInvoiceFieldsEnabled: isInvoiceFieldsFeatureSelected ? sourcePolicy?.areInvoiceFieldsEnabled : false,
